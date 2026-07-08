@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import localFont from "next/font/local";
+import Script from "next/script";
 import "./globals.css";
 
 // The original page loaded these two families from Google Fonts. We self-host
@@ -32,6 +33,21 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
+      <head>
+        {/* Google tag (gtag.js) — Google Ads AW-18305531844 */}
+        <Script
+          src="https://www.googletagmanager.com/gtag/js?id=AW-18305531844"
+          strategy="afterInteractive"
+        />
+        <Script id="gtag-init" strategy="afterInteractive">
+          {`
+            window.dataLayer = window.dataLayer || [];
+            function gtag(){dataLayer.push(arguments);}
+            gtag('js', new Date());
+            gtag('config', 'AW-18305531844');
+          `}
+        </Script>
+      </head>
       <body className={`${bricolage.variable} ${instrument.variable}`}>
         {children}
       </body>
