@@ -12,6 +12,10 @@ export type Product = {
   tag: string;
   accent: string;
   img: string;
+  // Shopify variant IDs used to hand the bag off to the store's checkout.
+  // Leave empty until known; an empty ID falls back to the on-page flow.
+  variantSingle?: string; // single-unit variant
+  variantCase?: string; // 12-case variant
 };
 
 export type Review = {
@@ -35,6 +39,10 @@ export const config = {
   discountPercent: 20, // 0–50
   freeShipThreshold: 50, // USD
   showAgeGate: true,
+  // Shopify storefront domain. Once set together with per-product variant IDs,
+  // a verified checkout redirects the shopper straight to the Shopify store
+  // instead of the on-page success modal.
+  shopDomain: "professorwhytes.com",
 };
 
 export const FONT_DISPLAY =
@@ -57,6 +65,8 @@ export const catalog: Product[] = [
     tag: "Fan favorite",
     accent: "#2f6fd0",
     img: "/products/blueberry.png",
+    variantSingle: "44271995584684",
+    variantCase: "44271995617452",
   },
   {
     id: "tropical",
@@ -69,6 +79,7 @@ export const catalog: Product[] = [
     tag: "Top strength",
     accent: "#e8556a",
     img: "/products/tropical.png",
+    variantSingle: "44271995912364",
   },
   {
     id: "strawberry",
@@ -81,6 +92,7 @@ export const catalog: Product[] = [
     tag: "Smooth & light",
     accent: "#e0384a",
     img: "/products/strawberry.png",
+    variantSingle: "44846638563500",
   },
   {
     id: "bluerazz",
@@ -93,6 +105,8 @@ export const catalog: Product[] = [
     tag: "Crowd pleaser",
     accent: "#1e58a8",
     img: "/products/bluerazz.png",
+    variantSingle: "44271995682988",
+    variantCase: "44271995715756",
   },
   {
     id: "rogue",
@@ -105,6 +119,8 @@ export const catalog: Product[] = [
     tag: "Bold & compact",
     accent: "#e1213f",
     img: "/products/rogue.png",
+    variantSingle: "44271997452460",
+    variantCase: "44271997485228",
   },
   {
     id: "citrus",
@@ -117,6 +133,8 @@ export const catalog: Product[] = [
     tag: "Everyday go-to",
     accent: "#37a24a",
     img: "/products/citrus.png",
+    variantSingle: "44271997681836",
+    variantCase: "44271997714604",
   },
 ];
 
@@ -177,4 +195,26 @@ export function hexToRgba(h: string, a: number): string {
 // Format a number as a USD price ($27 or $27.00 → $27; 27.5 → $27.50).
 export function fmt(n: number): string {
   return "$" + (Number.isInteger(n) ? n.toString() : n.toFixed(2));
+}
+
+/**
+ * Build a Shopify cart permalink that carries the bag over to the store's
+ * checkout, e.g. https://shop.pwhyte.com/cart/4455:1,9987:2. Shopify adds those
+ * variants to a fresh cart and (with "skip to checkout" enabled on the store,
+ * which this URL requests) sends the shopper straight to the checkout page.
+ *
+ * Returns "" when the domain or every variant ID is missing so the caller can
+ * fall back to the on-page flow.
+ */
+export function shopifyCartUrl(
+  domain: string,
+  items: { variantId?: string; qty: number }[],
+): string {
+  const host = domain.trim().replace(/^https?:\/\//, "").replace(/\/+$/, "");
+  const parts = items
+    .filter((i) => i.variantId && i.qty > 0)
+    .map((i) => `${i.variantId}:${i.qty}`);
+  if (!host || parts.length === 0) return "";
+  // `checkout` asks Shopify to skip the cart page and open checkout directly.
+  return `https://${host}/cart/${parts.join(",")}?checkout`;
 }

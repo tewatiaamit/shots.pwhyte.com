@@ -7,6 +7,7 @@ import {
   buildFaqs,
   config,
   fmt,
+  shopifyCartUrl,
   hexToRgba,
   FONT_DISPLAY,
   FONT_BODY,
@@ -138,10 +139,25 @@ export default function Landing() {
       setDobErrorMsg("You must be at least 21 years old to complete this purchase.");
       return;
     }
-    setCheckoutOpen(false);
-    setVerified(true);
     setDobError(false);
     setDobErrorMsg("");
+
+    // Verified — hand the bag off to the Shopify store's checkout.
+    const checkoutUrl = shopifyCartUrl(
+      config.shopDomain,
+      cartItems.map((c) => ({
+        variantId: c.packLabel === "12-case" ? c.variantCase : c.variantSingle,
+        qty: c.qty,
+      })),
+    );
+    if (checkoutUrl) {
+      window.location.href = checkoutUrl;
+      return;
+    }
+
+    // Fallback while the Shopify domain / variant IDs aren't configured yet.
+    setCheckoutOpen(false);
+    setVerified(true);
   };
 
   // --- derived values (ported from renderVals) ---
@@ -161,6 +177,7 @@ export default function Landing() {
     alt: string;
     priceLabel: string;
     unitNote: string;
+    hasCase: boolean;
     singleTabStyle: React.CSSProperties;
     caseTabStyle: React.CSSProperties;
     mgLabel: string;
@@ -175,6 +192,7 @@ export default function Landing() {
       alt: p.line + " " + p.name + " botanical shot",
       priceLabel: fmt(isCase ? p.casePrice : p.price),
       unitNote: isCase ? "12-case · " + fmt(p.casePrice / 12) + " each" : "per shot",
+      hasCase: Boolean(p.variantCase),
       singleTabStyle: isCase ? tabOff : tabOn,
       caseTabStyle: isCase ? tabOn : tabOff,
       mgLabel: p.mg + " MG",
@@ -795,23 +813,25 @@ export default function Landing() {
                 <div style={{ fontSize: "13px", color: "#7a7d83", marginBottom: "16px" }}>
                   {p.size}
                 </div>
-                <div
-                  style={{
-                    display: "inline-flex",
-                    padding: "3px",
-                    background: "rgba(22,24,29,0.05)",
-                    borderRadius: "999px",
-                    marginBottom: "18px",
-                    alignSelf: "flex-start",
-                  }}
-                >
-                  <button onClick={() => pickPack(p.id, "single")} style={p.singleTabStyle}>
-                    Single
-                  </button>
-                  <button onClick={() => pickPack(p.id, "case")} style={p.caseTabStyle}>
-                    12-case
-                  </button>
-                </div>
+                {p.hasCase && (
+                  <div
+                    style={{
+                      display: "inline-flex",
+                      padding: "3px",
+                      background: "rgba(22,24,29,0.05)",
+                      borderRadius: "999px",
+                      marginBottom: "18px",
+                      alignSelf: "flex-start",
+                    }}
+                  >
+                    <button onClick={() => pickPack(p.id, "single")} style={p.singleTabStyle}>
+                      Single
+                    </button>
+                    <button onClick={() => pickPack(p.id, "case")} style={p.caseTabStyle}>
+                      12-case
+                    </button>
+                  </div>
+                )}
                 <div
                   style={{
                     display: "flex",
