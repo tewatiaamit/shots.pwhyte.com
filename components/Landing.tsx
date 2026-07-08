@@ -149,6 +149,7 @@ export default function Landing() {
         variantId: c.packLabel === "12-case" ? c.variantCase : c.variantSingle,
         qty: c.qty,
       })),
+      config.discountCode,
     );
     if (checkoutUrl) {
       window.location.href = checkoutUrl;

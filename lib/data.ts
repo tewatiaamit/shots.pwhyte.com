@@ -43,6 +43,9 @@ export const config = {
   // a verified checkout redirects the shopper straight to the Shopify store
   // instead of the on-page success modal.
   shopDomain: "professorwhytes.com",
+  // Discount code auto-applied on the Shopify checkout when the bag is handed
+  // off from this page. Leave "" to send the cart without a code.
+  discountCode: "leaf20",
 };
 
 export const FONT_DISPLAY =
@@ -203,18 +206,26 @@ export function fmt(n: number): string {
  * variants to a fresh cart and (with "skip to checkout" enabled on the store,
  * which this URL requests) sends the shopper straight to the checkout page.
  *
+ * When `discountCode` is given, Shopify's `discount` parameter auto-applies the
+ * code on the checkout, so the shopper never has to type it in.
+ *
  * Returns "" when the domain or every variant ID is missing so the caller can
  * fall back to the on-page flow.
  */
 export function shopifyCartUrl(
   domain: string,
   items: { variantId?: string; qty: number }[],
+  discountCode = "",
 ): string {
   const host = domain.trim().replace(/^https?:\/\//, "").replace(/\/+$/, "");
   const parts = items
     .filter((i) => i.variantId && i.qty > 0)
     .map((i) => `${i.variantId}:${i.qty}`);
   if (!host || parts.length === 0) return "";
-  // `checkout` asks Shopify to skip the cart page and open checkout directly.
-  return `https://${host}/cart/${parts.join(",")}?checkout`;
+  // `checkout` asks Shopify to skip the cart page and open checkout directly;
+  // `discount` applies the coupon code automatically on that checkout.
+  const query = ["checkout"];
+  const code = discountCode.trim();
+  if (code) query.push(`discount=${encodeURIComponent(code)}`);
+  return `https://${host}/cart/${parts.join(",")}?${query.join("&")}`;
 }
