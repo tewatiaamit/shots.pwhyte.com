@@ -16,6 +16,9 @@ import {
 
 type Pack = "single" | "case";
 
+// URL shown while an age-verification popup is open.
+const AGE_PATH = "/age-verification";
+
 export default function Landing() {
   const { accent, discountPercent, freeShipThreshold, showAgeGate } = config;
 
@@ -44,6 +47,31 @@ export default function Landing() {
     } catch {
       /* ignore */
     }
+  }, []);
+
+  // Reflect the age-verification popups in the address bar. When either the
+  // entry age gate or the checkout verification modal is open, the URL shows
+  // /age-verification; closing it (or navigating Back) restores the home path.
+  useEffect(() => {
+    if (!mounted) return;
+    const gateOpen = showAgeGate && !ageOk && !denied;
+    const ageModalOpen = gateOpen || checkoutOpen;
+    const onAgePath = window.location.pathname === AGE_PATH;
+    if (ageModalOpen && !onAgePath) {
+      window.history.pushState({ pwAgeModal: true }, "", AGE_PATH);
+    } else if (!ageModalOpen && onAgePath) {
+      window.history.replaceState({}, "", "/");
+    }
+  }, [mounted, showAgeGate, ageOk, denied, checkoutOpen]);
+
+  // Browser Back while the checkout modal is open should just close it; the
+  // blocking entry gate stays put and re-pushes its URL on the next sync.
+  useEffect(() => {
+    const onPop = () => {
+      if (window.location.pathname !== AGE_PATH) setCheckoutOpen(false);
+    };
+    window.addEventListener("popstate", onPop);
+    return () => window.removeEventListener("popstate", onPop);
   }, []);
 
   // --- handlers ---

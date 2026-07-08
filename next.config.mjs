@@ -10,6 +10,11 @@ const nextConfig = {
   turbopack: {
     root: __dirname,
   },
+  // The age-verification popups push /age-verification into the URL client-side.
+  // Serve the landing page there too so a refresh or direct hit doesn't 404.
+  async rewrites() {
+    return [{ source: "/age-verification", destination: "/" }];
+  },
 };
 
 export default nextConfig;
